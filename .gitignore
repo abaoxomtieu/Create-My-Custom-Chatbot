@@ -1,0 +1,13 @@
+**/__pycache__/
+**/.DS_Store
+**.ipynb
+.vscode
+./data
+crawl_data.ipynb
+.venv
+Untitled Diagram.drawio
+.vercel
+.env
+a.ipynb
+**.xlsx
+data

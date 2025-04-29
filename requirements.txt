@@ -1,0 +1,14 @@
+langgraph
+langchain
+langchain-community
+pytz
+langchain-google-genai
+python-dateutil
+pandas
+openpyxl
+python-dotenv
+fastapi
+uvicorn[standard]
+langchain-pinecone
+pinecone-notebooks
+python-multipart
