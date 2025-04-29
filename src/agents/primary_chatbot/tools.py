@@ -14,7 +14,6 @@ async def extract_lesson_content(
 ) -> str:
     """Call vector store to retrieve documents based on query_sentence, class_number, subject_name
     
-    
     Args:
         query_sentence (str): Query sentence
         class_number (int): Class number
@@ -22,23 +21,24 @@ async def extract_lesson_content(
     Returns:
         str: Retrieved documents
     """
-    filter = {
-        "class_number": class_number,
-        "subject_name": subject_name,
-    }
-    logger.info(f"Filter: {filter}")
-    retriever = vector_store_lesson_content.as_retriever(
-        search_type="similarity_score_threshold",
-        search_kwargs={"k": 5, "score_threshold": 0.3},
-    )
-    documents = await retriever.ainvoke(query_sentence, filter=filter)
-    show_doc = " \n =============\n".join([doc.page_content for doc in documents])
-    logger.info(f"Retrieved documents: {show_doc}")
-    return {"documents": documents}
+    # filter = {
+    #     "class_number": class_number,
+    #     "subject_name": subject_name,
+    # }
+    # logger.info(f"Filter: {filter}")
+    # retriever = vector_store_lesson_content.as_retriever(
+    #     search_type="similarity_score_threshold",
+    #     search_kwargs={"k": 5, "score_threshold": 0.3},
+    # )
+    # documents = await retriever.ainvoke(query_sentence, filter=filter)
+    # show_doc = " \n =============\n".join([doc.page_content for doc in documents])
+    # logger.info(f"Retrieved documents: {show_doc}")
+    # return {"documents": documents}
+    return "Không có tài liệu"
 
 
 class ChangeLesson(BaseModel):
-    """Khi người dùng đề cập đến môn, bài học, lớp khác thì call ChangeLesson tool. Hỏi người dùng confirm lại thông tin lesson_name, subject_name, class_number trước khi call ChangeLesson tool"""
+    """Khi người dùng đề cập đến môn, bài học, lớp khác thì call ChangeLesson tool. Luôn hỏi confirm thông tin trước khi call tool"""
 
     lesson_name: str = Field(description="Tên bài học")
     subject_name: str = Field(description="Tên môn học")

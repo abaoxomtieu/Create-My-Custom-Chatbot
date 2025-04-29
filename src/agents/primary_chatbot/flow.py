@@ -11,7 +11,7 @@ from src.utils.logger import logger
 class LessonPlanDesignAgent:
     def __init__(self):
         self.builder = StateGraph(State)
-        self.lesson_plan_design_tools = [extract_lesson_content]
+        self.lesson_plan_design_tools = [extract_lesson_content, ChangeLesson]
 
     @staticmethod
     def check_existed_entry_info(state: State):

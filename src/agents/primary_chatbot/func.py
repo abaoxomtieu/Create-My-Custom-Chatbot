@@ -1,3 +1,4 @@
+from math import log
 import os
 from typing import TypedDict, Optional, List, Literal
 from langchain_core.documents import Document
@@ -11,6 +12,9 @@ from src.utils.logger import logger
 from langchain_core.messages import trim_messages, AnyMessage
 from .prompt import entry_chain, build_lesson_plan_chain
 from .data import primary_level_format, high_school_level_format
+from typing import Annotated, Sequence
+from langgraph.graph.message import add_messages
+from langchain_core.messages import HumanMessage
 
 
 class State(TypedDict):
@@ -23,6 +27,7 @@ class State(TypedDict):
     entry_response: str
     build_lesson_plan_response: list[AnyMessage]
     final_response: str
+    messages: Annotated[Sequence[AnyMessage], add_messages]
 
 
 def trim_history(state: State):
@@ -49,7 +54,10 @@ def trim_history(state: State):
 
 
 async def entry(state: State):
-    entry_response: AnyMessage = await entry_chain.ainvoke(state)
+    logger.info(f"Entry {state['messages']}")
+    entry_response: AnyMessage = await entry_chain.ainvoke(
+        {"messages": state["messages"]}
+    )
     logger.info(f"Entry response: {entry_response}")
     logger.info(f"Entry response tool_calls: {entry_response.content}")
     # Check if entry_response has tool_calls attribute and it's not empty
@@ -66,6 +74,7 @@ async def entry(state: State):
         and "subject_name" in entry_response.tool_calls[0]["args"]
         and "lesson_name" in entry_response.tool_calls[0]["args"]
     ):
+        logger.info("Vô đây")
         class_number = str(int(entry_response.tool_calls[0]["args"]["class_number"]))
         subject_name = str(entry_response.tool_calls[0]["args"]["subject_name"])
         lesson_name = str(entry_response.tool_calls[0]["args"]["lesson_name"])
@@ -75,7 +84,7 @@ async def entry(state: State):
             "subject_name": subject_name,
             "lesson_name": lesson_name,
         }
-
+    logger.info("không vô")
     return {
         "entry_response": entry_response.content,
         "class_number": None,
@@ -86,6 +95,32 @@ async def entry(state: State):
 
 
 async def build_lesson_plan(state: State):
+    logger.info(f"build_lesson_plan {state['messages']}")
+    has_change_lesson = any(
+        hasattr(message, "tool_calls")
+        and any(tool_call["name"] == "ChangeLesson" for tool_call in message.tool_calls)
+        for message in state["messages"]
+    )
+    has_extract_lesson = any(
+        hasattr(message, "tool_calls")
+        and any(
+            tool_call["name"] == "extract_lesson_content"
+            for tool_call in message.tool_calls
+        )
+        for message in state["messages"]
+    )
+    if has_change_lesson and not has_extract_lesson:
+        state["messages"] = []
+        state["messages_history"] = []
+    if has_extract_lesson and has_change_lesson:
+        state["messages"] = [
+            message
+            for message in state["messages"]
+            if not hasattr(message, "tool_calls")
+            or not any(
+                tool_call["name"] == "ChangeLesson" for tool_call in message.tool_calls
+            )
+        ]
     class_number = state["class_number"]
     if int(class_number) > 5:
         lesson_plan_format = high_school_level_format
@@ -96,6 +131,7 @@ async def build_lesson_plan(state: State):
 
     return {
         "build_lesson_plan_response": [build_lesson_plan_response],
+        "messages": build_lesson_plan_response,
         "final_response": build_lesson_plan_response.content,
     }
 
@@ -103,27 +139,32 @@ async def build_lesson_plan(state: State):
 def change_lesson(state: State):
     build_lesson_plan_response = state["build_lesson_plan_response"][-1]
     logger.info(f"Build lesson plan response: {build_lesson_plan_response}")
-    
+
     # Check if there are tool calls in the response
-    if hasattr(build_lesson_plan_response, "tool_calls") and build_lesson_plan_response.tool_calls:
+    if (
+        hasattr(build_lesson_plan_response, "tool_calls")
+        and build_lesson_plan_response.tool_calls
+    ):
         # Extract values from tool_calls
         try:
             # Get the first tool call (should be ChangeLesson)
             tool_call = build_lesson_plan_response.tool_calls[0]
-            
+
             # Extract class_number (handle float conversion if needed)
             class_number_value = tool_call["args"]["class_number"]
             if isinstance(class_number_value, float):
                 class_number = str(int(class_number_value))
             else:
                 class_number = str(class_number_value)
-                
+
             # Extract subject and lesson name
             subject_name = str(tool_call["args"]["subject_name"])
             lesson_name = str(tool_call["args"]["lesson_name"])
-            
-            logger.info(f"Extracted lesson data: class={class_number}, subject={subject_name}, lesson={lesson_name}")
-            
+
+            logger.info(
+                f"Extracted lesson data: class={class_number}, subject={subject_name}, lesson={lesson_name}"
+            )
+
             return {
                 "class_number": class_number,
                 "subject_name": subject_name,
@@ -131,7 +172,7 @@ def change_lesson(state: State):
             }
         except (KeyError, IndexError, TypeError) as e:
             logger.error(f"Error extracting lesson data: {e}")
-    
+
     # Default values if extraction fails
     logger.warning("Could not extract lesson data from response")
     return {
@@ -139,4 +180,3 @@ def change_lesson(state: State):
         "subject_name": None,
         "lesson_name": None,
     }
-

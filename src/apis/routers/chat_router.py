@@ -4,12 +4,9 @@ from src.utils.logger import logger
 import json
 from src.apis.interfaces.chat_interface import (
     PrimaryChatBody,
-    ChatBody,
-    HighlightExplainBody,
-    TutorChatBody,
 )
-from src.apis.interfaces.entrance_eval_interface import TestResultsBody
 from src.agents.primary_chatbot.flow import lesson_plan_design_agent
+from langchain_core.messages.ai import AIMessageChunk
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
@@ -28,18 +25,27 @@ async def message_generator(input_graph: dict, background: BackgroundTasks):
                     event_type, event_message = event
                     if event_type == "messages":
                         message, _ = event_message
-                        if message.content:
+                        logger.info(f"yield_message: {message}")
+                        if isinstance(message, AIMessageChunk):
                             temp += message.content
-                            message_yield = json.dumps(
-                                {"type": "message", "content": temp},
+                            yield json.dumps(
+                                {
+                                    "type": "message",
+                                    "content": temp,
+                                },
                                 ensure_ascii=False,
-                            )
-                            yield message_yield + "\n\n"
+                            ) + "\n\n"
                     if event_type == "values":
                         last_output_state = event_message
                 except Exception as e:
                     logger.error(f"Error processing stream event: {str(e)}")
-                    yield json.dumps({"type": "error", "content": "Error processing response " + str(e)}, ensure_ascii=False) + "\n\n"
+                    yield json.dumps(
+                        {
+                            "type": "error",
+                            "content": "Error processing response " + str(e),
+                        },
+                        ensure_ascii=False,
+                    ) + "\n\n"
                     return
 
             if last_output_state is None:
@@ -64,19 +70,30 @@ async def message_generator(input_graph: dict, background: BackgroundTasks):
                 yield final_response + "\n\n"
             except Exception as e:
                 logger.error(f"Error processing final response: {str(e)}")
-                yield json.dumps({"type": "error", "content": "Error processing the final response" + str(e)}, ensure_ascii=False) + "\n\n"
+                yield json.dumps(
+                    {
+                        "type": "error",
+                        "content": "Error processing the final response" + str(e),
+                    },
+                    ensure_ascii=False,
+                ) + "\n\n"
                 return
 
         except Exception as e:
             logger.error(f"Error in workflow stream: {str(e)}")
-            yield json.dumps({"type": "error", "content": "Error processing stream" + str(e)}, ensure_ascii=False) + "\n\n"
+            yield json.dumps(
+                {"type": "error", "content": "Error processing stream" + str(e)},
+                ensure_ascii=False,
+            ) + "\n\n"
             return
 
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
-        yield json.dumps({"type": "error", "content": "An unexpected error occurred" + str(e)}, ensure_ascii=False) + "\n\n"
+        yield json.dumps(
+            {"type": "error", "content": "An unexpected error occurred" + str(e)},
+            ensure_ascii=False,
+        ) + "\n\n"
         return
-
 
 
 @router.post("/primary_chat/stream")
@@ -93,10 +110,11 @@ async def primary_chat_stream(body: PrimaryChatBody, background: BackgroundTasks
                     "entry_response": None,
                     "build_lesson_plan_response": None,
                     "final_response": None,
+                    "messages": [("user", body.query)],
                 },
-                background=background
+                background=background,
             ),
-            media_type="text/event-stream"
+            media_type="text/event-stream",
         )
     except Exception as e:
         logger.error(f"Error in streaming endpoint: {str(e)}")
@@ -104,6 +122,7 @@ async def primary_chat_stream(body: PrimaryChatBody, background: BackgroundTasks
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"error": f"Streaming error: {str(e)}"},
         )
+
 
 @router.post("/primary_chat")
 async def primary_chat(body: PrimaryChatBody):
@@ -118,6 +137,7 @@ async def primary_chat(body: PrimaryChatBody):
             "entry_response": None,
             "build_lesson_plan_response": None,
             "final_response": None,
+            "messages": [("user", body.query)],
         }
     )
     final_response = response["final_response"]
