@@ -1,11 +1,9 @@
 primary_level_format = """
 Khung giáo án cho cấp Tiểu học (từ lớp 1 đến lớp 5)
 Cụ thể như sau:
-Môn học/hoạt động giáo dục:
-Lớp.:
-Số tiết:
-Tên bài học:
-Thời gian thực hiện: ngày.tháng...năm...(hoặc từ .../.../... đến .../.../...)
+Môn học/hoạt động giáo dục.........................................................; lớp....................
+Tên bài học: .............................................................................; số tiết:................
+Thời gian thực hiện: ngày…tháng…năm…(hoặc từ …/…/… đến …/…/…)
 1. Yêu cầu cần đạt: Nêu cụ thể học sinh thực hiện được việc gì; vận dụng được những gì vào giải quyết vấn đề trong thực tế cuộc sống; có cơ hội hình thành, phát triển phẩm chất, năng lực gì.
 2. Đồ dùng dạy học: Nêu các thiết bị, học liệu được sử dụng trong bài dạy để tổ chức cho học sinh hoạt động nhằm đạt yêu cầu cần đạt của bài dạy.
 3. Các hoạt động dạy học chủ yếu:
@@ -13,9 +11,7 @@ Thời gian thực hiện: ngày.tháng...năm...(hoặc từ .../.../... đến
 - Hoạt động Hình thành kiến thức mới: trải nghiệm, khám phá, phân tích, hình thành kiến thức mới (đối với bài hình thành kiến thức mới).
 - Hoạt động Luyện tập, thực hành.
 - Hoạt động Vận dụng, trải nghiệm (nếu có).
-4. Điều chỉnh sau bài dạy (nếu có).
-Dựa trên khung giáo án này để thiết kế theo đúng yêu cầu của khối Tiểu học, không sử dụng theo khung giáo án của Context "Khung Giáo án".
-
+Điều chỉnh sau bài dạy (nếu có).
 """
 
 high_school_level_format = """

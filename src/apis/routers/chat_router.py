@@ -25,7 +25,6 @@ async def message_generator(input_graph: dict, background: BackgroundTasks):
                     event_type, event_message = event
                     if event_type == "messages":
                         message, _ = event_message
-                        logger.info(f"yield_message: {message}")
                         if isinstance(message, AIMessageChunk):
                             temp += message.content
                             yield json.dumps(

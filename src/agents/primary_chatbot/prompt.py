@@ -36,7 +36,7 @@ entry_prompt = ChatPromptTemplate.from_messages(
             Nếu người dùng gửi "Tạo giáo án lớp 5, môn Sử, bài Chiến thắng Bạch Đằng", bạn phải gọi EntryExtractor ngay lập tức với class_number=5, subject_name="Sử", lesson_name="Chiến thắng Bạch Đằng".
         """,
         ),
-        # ("placeholder", "{messages_history}"),
+        ("placeholder", "{messages_history}"),
         ("placeholder", "{messages}"),
     )
 )
@@ -59,9 +59,9 @@ build_lesson_plan_prompt = ChatPromptTemplate.from_messages(
 
             Khung giáo án chuẩn theo công văn cho lớp {class_number}:
             {lesson_plan_format}
-
-            Luôn generate ra giáo án cho môn học dựa trên khung giáo án đã cung cấp. Nếu giáo viên muốn thông tin phong phú và chính xác, hãy gọi tool extract_lesson_content.
-            Không đề cập tên tools trong lời trả lời để cuộc trò chuyện dễ hiểu hơn.
+            Note:
+            - Luôn generate ra giáo án cho môn học dựa trên khung giáo án đã cung cấp. Nếu giáo viên muốn thông tin phong phú và chính xác, hãy gọi tool extract_lesson_content.
+            - Không đề cập tên tools trong lời trả lời để cuộc trò chuyện dễ hiểu hơn.
             """,
         ),
         ("placeholder", "{messages_history}"),
