@@ -1,7 +1,8 @@
 import asyncio
 from dotenv import load_dotenv
 load_dotenv()
-from src.agents.primary_chatbot.flow import lesson_plan_design_agent
+# from src.agents.primary_chatbot.flow import lesson_plan_design_agent
+from src.agents.prompt_engineer_assistant.flow import prompt_engineer_assistant_agent
 
 # print(lesson_plan_design_agent.get_graph().draw_mermaid())
 
@@ -16,6 +17,8 @@ from src.agents.primary_chatbot.flow import lesson_plan_design_agent
 # build_lesson_plan_response: AnyMessage
 
 
+
+
 input_dict = {
     "user_query":"Tạo khung giáo án lớp 5, môn sử, bài Chiến thắng Bạch Đằng năm 938",
     "messages_history": [],
@@ -28,9 +31,9 @@ input_dict = {
 }
 
 async def main():
-    response = await lesson_plan_design_agent.ainvoke(input_dict)
+    response = await prompt_engineer_assistant_agent.ainvoke(input_dict)
     print(response)
     print("===============================================")
-    print(response["build_lesson_plan_response"][0].content)
+    print(response["final_response"])
 
 asyncio.run(main())

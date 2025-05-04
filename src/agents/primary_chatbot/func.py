@@ -55,9 +55,7 @@ def trim_history(state: State):
 
 async def entry(state: State):
     logger.info(f"Entry {state['messages']}")
-    entry_response: AnyMessage = await entry_chain.ainvoke(
-        {"messages": state["messages"]}
-    )
+    entry_response: AnyMessage = await entry_chain.ainvoke(state)
     logger.info(f"Entry response: {entry_response}")
     logger.info(f"Entry response tool_calls: {entry_response.content}")
     # Check if entry_response has tool_calls attribute and it's not empty
