@@ -36,13 +36,17 @@ async def extract_lesson_content(
     # return {"documents": documents}
     return "Không có tài liệu"
 
-
-class ChangeLesson(BaseModel):
-    """Khi người dùng đề cập đến môn, bài học, lớp khác thì call ChangeLesson tool. Luôn hỏi confirm thông tin trước khi call tool"""
-
-    lesson_name: str = Field(description="Tên bài học")
-    subject_name: str = Field(description="Tên môn học")
-    class_number: int = Field(description="Số lớp học")
+@tool
+def ChangeLesson(lesson_name: str, subject_name: str, class_number: int):
+    """Khi người dùng đề soạn giáo án đề cập đến môn, bài học, lớp khác thì call ChangeLesson tool. 
+    Luôn hỏi confirm thông tin từ giáo viên trước khi call tool
+    
+    Args:
+        lesson_name (str): Tên bài học
+        subject_name (str): Tên môn học
+        class_number (int): Số lớp học
+    """
+    
 
 
 class EntryExtractor(BaseModel):

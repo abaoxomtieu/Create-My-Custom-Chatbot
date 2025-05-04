@@ -138,6 +138,7 @@ async def build_lesson_plan(state: State):
 
 def change_lesson(state: State):
     build_lesson_plan_response = state["build_lesson_plan_response"][-1]
+    print("Build lesson plan response: ", build_lesson_plan_response)
     logger.info(f"Build lesson plan response: {build_lesson_plan_response}")
 
     # Check if there are tool calls in the response
