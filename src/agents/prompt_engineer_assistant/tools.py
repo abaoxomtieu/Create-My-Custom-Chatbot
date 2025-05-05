@@ -10,8 +10,8 @@ def prompt_create_complete(
     guidelines: str,
     output_format: str,
 ):
-    """Call prompt_create_complete tool when collect all details for prompt
-    
+    """Call prompt_create_complete tool when collect all details for prompt. Always ask for confirm from user before call tool
+
     Args:
         role (str): Role
         context (str): Context
