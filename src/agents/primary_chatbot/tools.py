@@ -13,7 +13,7 @@ async def extract_lesson_content(
     query_sentence: str, class_number: int, subject_name: str
 ) -> str:
     """Call vector store to retrieve documents based on query_sentence, class_number, subject_name
-    
+
     Args:
         query_sentence (str): Query sentence
         class_number (int): Class number
@@ -36,22 +36,25 @@ async def extract_lesson_content(
     # return {"documents": documents}
     return "Không có tài liệu"
 
+
 @tool
 def ChangeLesson(lesson_name: str, subject_name: str, class_number: int):
-    """Khi người dùng đề soạn giáo án đề cập đến môn, bài học, lớp khác thì call ChangeLesson tool. 
+    """Khi người dùng đề soạn giáo án đề cập đến môn, bài học, lớp khác thì call ChangeLesson tool.
     Luôn hỏi confirm thông tin từ giáo viên trước khi call tool
-    
+
     Args:
         lesson_name (str): Tên bài học
         subject_name (str): Tên môn học
         class_number (int): Số lớp học
     """
-    
 
 
-class EntryExtractor(BaseModel):
-    """Khi thu thập đủ thông tin class_number, subject, lesson thì call EntryExtractor tool. Không cần hỏi confirm"""
+@tool
+def EntryExtractor(class_number: int, subject_name: str, lesson_name: str):
+    """Khi thu thập đủ thông tin class_number, subject, lesson thì call EntryExtractor tool. Không cần hỏi confirm
 
-    class_number: int = Field(description="Số lớp học")
-    subject_name: str = Field(description="Môn học")
-    lesson_name: str = Field(description="Bài học")
+    Args:
+        class_number (int): Số lớp học
+        subject_name (str): Môn học
+        lesson_name (str): Bài học
+    """
