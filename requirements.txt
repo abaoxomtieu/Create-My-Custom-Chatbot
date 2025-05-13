@@ -13,3 +13,4 @@ langchain-pinecone
 pinecone-notebooks
 python-multipart
 langchain-openai
+pillow

@@ -6,7 +6,7 @@ from langchain_core.messages import trim_messages, AnyMessage
 from src.utils.helper import (
     fake_token_counter,
     convert_list_context_source_to_str,
-    convert_message,
+    filter_image_messages,
 )
 import os
 from .prompt import transform_query_chain, rag_answering_chain, GenerateAnswer
@@ -25,42 +25,40 @@ class State(TypedDict):
 
 
 def trim_history(state: State):
-    history = (
-        convert_message(state["messages_history"])
-        if state.get("messages_history")
-        else None
-    )
+    history = state.get("messages_history", [])
 
     if not history:
         return {"messages_history": []}
 
-    chat_message_history = trim_messages(
-        history,
-        strategy="last",
-        token_counter=fake_token_counter,
-        max_tokens=int(os.getenv("HISTORY_TOKEN_LIMIT", 2000)),
-        start_on="human",
-        end_on="ai",
-        include_system=False,
-        allow_partial=False,
-    )
-    return {"messages_history": chat_message_history}
+    # Since we're already using the role-based format that LangChain understands,
+    # we can directly use trim_messages
+    # chat_message_history = trim_messages(
+    #     history,
+    #     strategy="last",
+    #     token_counter=fake_token_counter,
+    #     max_tokens=int(os.getenv("HISTORY_TOKEN_LIMIT", 2000)),
+    #     start_on="human",
+    #     end_on="ai",
+    #     include_system=False,
+    #     allow_partial=False,
+    # )
+
+    return {"messages_history": history[-10:]}
 
 
 async def transform_query(state: State):
-    # Handle image-based queries
     message = state["messages"]
-    # Extract the text part from the message content
     if isinstance(message["content"], list):
         for content_item in message["content"]:
             if content_item["type"] == "text":
                 question = content_item["text"]
                 break
     else:
-        # Handle text-only queries
         question = message["content"]
+    logger.info(f"Question: {question}")
 
-    history = state.get("messages_history", [])
+    history = filter_image_messages(state.get("messages_history", []))
+    logger.info(f"History: {history}")
     transform_response = await transform_query_chain.ainvoke(
         {"question": question, "messages_history": history}
     )
@@ -89,19 +87,17 @@ async def transform_query(state: State):
         }
 
 
-async def retrieve_document(state: State):
-    messages = state["messages"]
-    if isinstance(messages["content"], list):
-        question = messages["content"][0]["text"]
-    else:
-        question = messages["content"]
+def retrieve_document(state: State):
+    messages = filter_image_messages([state["messages"]])[0]
+    question = messages["content"]
+    logger.info(f"Question retrieve document: {question}")
     filter = state.get("filter", None)
     logger.info(f"Filter: {filter}")
     retriever = test_rag_vector_store.as_retriever(
         search_type="similarity_score_threshold",
         search_kwargs={"k": 5, "score_threshold": 0.3},
     )
-    documents = await retriever.ainvoke(question)
+    documents = retriever.invoke(question)
     show_doc = " \n =============\n".join([doc.page_content for doc in documents])
     # logger.info(f"Retrieved documents: {show_doc}")
     return {"documents": documents}

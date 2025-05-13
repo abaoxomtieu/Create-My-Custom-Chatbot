@@ -7,7 +7,9 @@ from langchain_core.messages import ToolMessage
 
 # Use TypeVar instead of direct import to avoid circular dependency
 from typing import TypeVar
-State = TypeVar('State', bound=Dict[str, Any])
+
+State = TypeVar("State", bound=Dict[str, Any])
+
 
 def fake_token_counter(messages: Union[list[BaseMessage], BaseMessage]) -> int:
     if isinstance(messages, list):
@@ -32,10 +34,13 @@ def convert_message(messages):
             list_message.append(AIMessage(content=message["content"]))
     return list_message
 
+
 def create_tool_node_with_fallback(tools: list) -> dict:
     return ToolNode(tools).with_fallbacks(
         [RunnableLambda(handle_tool_error)], exception_key="error"
     )
+
+
 def handle_tool_error(state: State) -> dict:
     error = state.get("error")
     tool_messages = state["build_lesson_plan_response"]
@@ -48,3 +53,38 @@ def handle_tool_error(state: State) -> dict:
             for tc in tool_messages.tool_calls
         ]
     }
+
+
+def filter_image_messages(messages):
+    """
+    Filters out messages containing images from a list of message dictionaries.
+
+    Args:
+        messages (list): A list of dictionaries, each representing a message with 'role' and 'content' keys.
+
+    Returns:
+        list: A new list of dictionaries with messages containing images removed.
+    """
+    filtered_messages = []
+
+    for message in messages:
+        # Check if 'content' is a list (indicating multiple parts)
+        if isinstance(message["content"], list):
+            # Filter out parts that are of type 'image'
+            filtered_content = [
+                part for part in message["content"] if part.get("type") != "image"
+            ]
+            # If there are remaining parts, add the message to the filtered list
+            if filtered_content:
+                print("filtered_content", filtered_content)
+                filtered_messages.append(
+                    {
+                        "role": message["role"],
+                        "content": filtered_content[0]["text"]
+                    }
+                )
+        else:
+            # If 'content' is not a list, simply add the message
+            filtered_messages.append(message)
+
+    return filtered_messages

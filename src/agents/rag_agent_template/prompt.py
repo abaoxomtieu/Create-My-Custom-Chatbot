@@ -42,8 +42,6 @@ Quy trình trả lời:
 
 Context:
 {context}
-        
-        
         """,
         ),
         ("placeholder", "{messages_history}"),
