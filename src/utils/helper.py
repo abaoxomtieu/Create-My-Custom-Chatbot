@@ -32,7 +32,6 @@ def convert_message(messages):
             list_message.append(AIMessage(content=message["content"]))
     return list_message
 
-
 def create_tool_node_with_fallback(tools: list) -> dict:
     return ToolNode(tools).with_fallbacks(
         [RunnableLambda(handle_tool_error)], exception_key="error"
