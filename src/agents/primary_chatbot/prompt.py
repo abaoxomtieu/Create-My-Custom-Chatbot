@@ -2,7 +2,7 @@ from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from typing import Literal
-from src.config.llm import llm_4o_mini as llm
+from src.config.llm import llm_2_0 as llm
 from typing import Optional
 from src.config.vector_store import vector_store_lesson_content
 from .tools import extract_lesson_content, ChangeLesson, EntryExtractor

@@ -1,5 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate
-from src.config.llm import llm_4o_mini as llm
+from src.config.llm import llm_2_0 as llm
 from .tools import prompt_create_complete
 
 create_prompt_assistant_prompt = ChatPromptTemplate.from_messages(

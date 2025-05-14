@@ -34,7 +34,7 @@ async def message_generator(input_graph: dict, background: BackgroundTasks):
                                     "content": temp,
                                 },
                                 ensure_ascii=False,
-                            ) + "\n\n"
+                            )
                     if event_type == "values":
                         last_output_state = event_message
                 except Exception as e:
@@ -45,7 +45,7 @@ async def message_generator(input_graph: dict, background: BackgroundTasks):
                             "content": "Error processing response " + str(e),
                         },
                         ensure_ascii=False,
-                    ) + "\n\n"
+                    )
                     return
 
             if last_output_state is None:
@@ -67,7 +67,7 @@ async def message_generator(input_graph: dict, background: BackgroundTasks):
                     },
                     ensure_ascii=False,
                 )
-                yield final_response + "\n\n"
+                yield final_response
             except Exception as e:
                 logger.error(f"Error processing final response: {str(e)}")
                 yield json.dumps(
@@ -76,7 +76,7 @@ async def message_generator(input_graph: dict, background: BackgroundTasks):
                         "content": "Error processing the final response" + str(e),
                     },
                     ensure_ascii=False,
-                ) + "\n\n"
+                )
                 return
 
         except Exception as e:
@@ -84,7 +84,7 @@ async def message_generator(input_graph: dict, background: BackgroundTasks):
             yield json.dumps(
                 {"type": "error", "content": "Error processing stream" + str(e)},
                 ensure_ascii=False,
-            ) + "\n\n"
+            )
             return
 
     except Exception as e:
@@ -92,7 +92,7 @@ async def message_generator(input_graph: dict, background: BackgroundTasks):
         yield json.dumps(
             {"type": "error", "content": "An unexpected error occurred" + str(e)},
             ensure_ascii=False,
-        ) + "\n\n"
+        )
         return
 
 
@@ -179,7 +179,7 @@ async def prompt_engineer_message_generator(
                                     "content": temp,
                                 },
                                 ensure_ascii=False,
-                            ) + "\n\n"
+                            )
                     if event_type == "values":
                         last_output_state = event_message
                 except Exception as e:
@@ -190,7 +190,7 @@ async def prompt_engineer_message_generator(
                             "content": "Error processing response " + str(e),
                         },
                         ensure_ascii=False,
-                    ) + "\n\n"
+                    )
                     return
 
             if last_output_state is None:
@@ -210,7 +210,7 @@ async def prompt_engineer_message_generator(
                         },
                         ensure_ascii=False,
                     )
-                    + "\n\n"
+
                 )
                 yield final_response
             except Exception as e:
@@ -221,7 +221,7 @@ async def prompt_engineer_message_generator(
                         "content": "Error processing the final response" + str(e),
                     },
                     ensure_ascii=False,
-                ) + "\n\n"
+                )
                 return
 
         except Exception as e:
@@ -229,7 +229,7 @@ async def prompt_engineer_message_generator(
             yield json.dumps(
                 {"type": "error", "content": "Error processing stream" + str(e)},
                 ensure_ascii=False,
-            ) + "\n\n"
+            )
             return
 
     except Exception as e:
@@ -237,7 +237,7 @@ async def prompt_engineer_message_generator(
         yield json.dumps(
             {"type": "error", "content": "An unexpected error occurred" + str(e)},
             ensure_ascii=False,
-        ) + "\n\n"
+        )
         return
 
 

@@ -14,3 +14,6 @@ pinecone-notebooks
 python-multipart
 langchain-openai
 pillow
+langchain-text-splitters
+python-docx
+cloudinary
