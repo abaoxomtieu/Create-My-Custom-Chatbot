@@ -10,10 +10,7 @@ import os
 
 
 class State(TypedDict):
-    user_query: str | AnyMessage
-    messages_history: list
     messages: Annotated[Sequence[AnyMessage], add_messages]
-    final_response: str
 
 
 def trim_history(state: State):

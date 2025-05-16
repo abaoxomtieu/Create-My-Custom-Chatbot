@@ -3,12 +3,7 @@ from langchain_core.tools import tool
 
 @tool
 def prompt_create_complete(
-    role: str,
-    context: str,
-    input_values: str,
-    instructions: str,
-    guidelines: str,
-    output_format: str,
+    prompt:str
 ):
     """Call prompt_create_complete tool when collect all details for prompt. Always ask for confirm from user before call tool
 

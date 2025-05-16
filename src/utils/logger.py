@@ -7,8 +7,8 @@ import pytz
 
 
 class CoreCFG:
-    PROJECT_NAME = "SCHEDULE AI"
-    BOT_NAME = str("SCHEDULE AI")
+    PROJECT_NAME = "Robokki"
+    BOT_NAME = str("Robokki")
 
 
 def get_date_time():
