@@ -3,11 +3,16 @@ from src.config.llm import llm_2_0
 from .func import (
     State,
     trim_history,
-    transform_query,
-    retrieve_document,
+    execute_tool,
     generate_answer_rag,
 )
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.checkpoint.memory import InMemorySaver
+
+from langgraph.prebuilt import ToolNode
+from .tools import retrieve_document
+
+tool_node = ToolNode([retrieve_document])
 
 
 class RAGAgentTemplate:
@@ -15,26 +20,37 @@ class RAGAgentTemplate:
         self.builder = StateGraph(State)
 
     @staticmethod
-    def routing(state: State):
-        pass
+    def should_continue(state: State):
+        messages = state["messages"]
+        last_message = messages[-1]
+        if last_message.tool_calls:
+            return "execute_tool"
+        return END
 
     def node(self):
         self.builder.add_node("trim_history", trim_history)
-        self.builder.add_node("transform_query", transform_query)
-        self.builder.add_node("retrieve_document", retrieve_document)
         self.builder.add_node("generate_answer_rag", generate_answer_rag)
+        self.builder.add_node("execute_tool", execute_tool)
 
     def edge(self):
         self.builder.add_edge(START, "trim_history")
-        self.builder.add_edge("trim_history", "transform_query")
-        self.builder.add_edge("transform_query", "retrieve_document")
-        self.builder.add_edge("retrieve_document", "generate_answer_rag")
+        self.builder.add_edge("trim_history", "generate_answer_rag")
+        self.builder.add_conditional_edges(
+            "generate_answer_rag",
+            self.should_continue,
+            {
+                END: END,
+                "execute_tool": "execute_tool",
+            },
+        )
+        self.builder.add_edge("execute_tool", "generate_answer_rag")
         self.builder.add_edge("generate_answer_rag", END)
 
     def __call__(self) -> CompiledStateGraph:
         self.node()
         self.edge()
-        return self.builder.compile()
+
+        return self.builder.compile(checkpointer=InMemorySaver())
 
 
 rag_agent_template_agent = RAGAgentTemplate()()

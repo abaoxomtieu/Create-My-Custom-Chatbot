@@ -9,11 +9,14 @@ from docx import Document as DocxDoc
 import os
 import uuid
 import tempfile
+import time
+import math
 
 from src.config.cloudinary import upload_image, get_image_url
 from src.data_preprocessing.prompt import image_caption_prompt
 from src.config.llm import llm_2_0 as llm
 from src.config.vector_store import vector_store_lesson_content
+from src.utils.logger import logger
 
 
 def extract_and_chunk_documents(
@@ -21,10 +24,11 @@ def extract_and_chunk_documents(
     chunk_size: int = 1000,
     chunk_overlap: int = 200,
     upload_images: bool = True,
+    batch_size: int = 15,
 ):
     """
     1. Extract text and images from the document, keeping them in the order they appear.
-    2. Upload images to Cloudinary and get captions using the image_caption_prompt.
+    2. Upload images to Cloudinary and get captions using the image_caption_prompt in batches.
     3. Create separate chunks for text and images.
 
     Args:
@@ -32,6 +36,7 @@ def extract_and_chunk_documents(
         chunk_size: Size of text chunks
         chunk_overlap: Overlap between chunks
         upload_images: Whether to upload images to Cloudinary
+        batch_size: Number of images to process in a single batch
 
     Returns:
         List of Document objects with separate text and image chunks
@@ -51,31 +56,62 @@ def extract_and_chunk_documents(
     text_docs = [doc for doc in docs if doc.metadata.get("type") == "text"]
     image_docs = [doc for doc in docs if doc.metadata.get("type") == "image"]
 
-    # Process images: upload to Cloudinary and get captions
+    # Process images in batches: upload to Cloudinary and get captions
     processed_image_chunks = []
-    if upload_images:
-        for doc in image_docs:
-            if "image_data" in doc.metadata:
-                # Create a temporary file for the image
-                image_id = str(uuid.uuid4())
-                temp_dir = tempfile.mkdtemp()
-                img_path = os.path.join(temp_dir, f"{image_id}.png")
+    if upload_images and image_docs:
+        # Prepare image batches
+        total_images = len(image_docs)
+        num_batches = math.ceil(total_images / batch_size)
 
-                # Save image to temporary file
-                doc.metadata["image_data"].save(img_path)
+        logger.info(
+            f"Processing {total_images} images in {num_batches} batches of size {batch_size}"
+        )
 
-                # Upload to Cloudinary
-                upload_result = upload_image(
-                    file_path=img_path,
-                    folder="robokki_images",
-                    public_id=image_id,
-                )
+        for batch_idx in range(num_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, total_images)
+            current_batch = image_docs[start_idx:end_idx]
 
-                # Get public URL
-                public_url = upload_result["secure_url"]
+            logger.info(
+                f"Processing batch {batch_idx+1}/{num_batches} with {len(current_batch)} images"
+            )
 
-                # Get image caption using the prompt
-                caption = image_caption_chain.invoke(
+            # Process each image in the batch (upload to Cloudinary)
+            batch_image_data = []
+
+            for doc in current_batch:
+                if "image_data" in doc.metadata:
+                    # Create a temporary file for the image
+                    image_id = str(uuid.uuid4())
+                    temp_dir = tempfile.mkdtemp()
+                    img_path = os.path.join(temp_dir, f"{image_id}.png")
+
+                    # Save image to temporary file
+                    doc.metadata["image_data"].save(img_path)
+
+                    # Upload to Cloudinary
+                    upload_result = upload_image(
+                        file_path=img_path,
+                        folder="robokki_images",
+                        public_id=image_id,
+                    )
+
+                    # Get public URL
+                    public_url = upload_result["secure_url"]
+
+                    # Store image data for batch processing
+                    batch_image_data.append(
+                        {
+                            "public_url": public_url,
+                            "temp_dir": temp_dir,
+                            "img_path": img_path,
+                        }
+                    )
+
+            # Process the batch with LLM (get captions)
+            batch_inputs = []
+            for img_data in batch_image_data:
+                batch_inputs.append(
                     {
                         "messages": [
                             {
@@ -88,7 +124,7 @@ def extract_and_chunk_documents(
                                     {
                                         "type": "image",
                                         "source_type": "url",
-                                        "url": public_url,
+                                        "url": img_data["public_url"],
                                     },
                                 ],
                             },
@@ -97,20 +133,46 @@ def extract_and_chunk_documents(
                     }
                 )
 
-                # Create a separate image chunk with only type and public_url metadata
-                processed_image_chunks.append(
-                    Document(
-                        page_content=caption,
-                        metadata={
-                            "type": "image",
-                            "public_url": public_url,
-                        },
-                    )
-                )
+            # Get captions for the batch
+            try:
+                batch_captions = image_caption_chain.batch(batch_inputs)
 
-                # Clean up temporary file
-                os.remove(img_path)
-                os.rmdir(temp_dir)
+                # Create document chunks with captions
+                for i, caption in enumerate(batch_captions):
+                    processed_image_chunks.append(
+                        Document(
+                            page_content=caption,
+                            metadata={
+                                "type": "image",
+                                "public_url": batch_image_data[i]["public_url"],
+                            },
+                        )
+                    )
+
+                    # Clean up temporary files
+                    os.remove(batch_image_data[i]["img_path"])
+                    os.rmdir(batch_image_data[i]["temp_dir"])
+
+                # Sleep between batches to avoid rate limits if there are more batches
+                if batch_idx < num_batches - 1:
+                    sleep_time = 120  # 2 minutes between batches
+                    logger.info(
+                        f"Sleeping for {sleep_time} seconds before processing batch {batch_idx+2}/{num_batches}"
+                    )
+                    time.sleep(sleep_time)
+
+            except Exception as e:
+                logger.error(f"Error processing batch {batch_idx+1}: {str(e)}")
+                # Clean up any remaining temporary files
+                for img_data in batch_image_data:
+                    try:
+                        if os.path.exists(img_data["img_path"]):
+                            os.remove(img_data["img_path"])
+                        if os.path.exists(img_data["temp_dir"]):
+                            os.rmdir(img_data["temp_dir"])
+                    except Exception as cleanup_error:
+                        logger.error(f"Error cleaning up: {str(cleanup_error)}")
+                raise e
 
     # Process text documents - create a combined text document
     combined_text = ""
@@ -237,7 +299,10 @@ def extract_pdf_with_images(pdf_path: str) -> list[Document]:
 
 
 def process_and_index_file(
-    file_path: str, chunk_size: int = 1000, chunk_overlap: int = 200
+    file_path: str,
+    chunk_size: int = 1000,
+    chunk_overlap: int = 200,
+    batch_size: int = 15,
 ) -> list[Document]:
     """
     Process a file and index it in the vector store.
@@ -246,6 +311,7 @@ def process_and_index_file(
         file_path: Path to the file to process
         chunk_size: Size of text chunks
         chunk_overlap: Overlap between chunks
+        batch_size: Number of images to process in a single batch
 
     Returns:
         List of processed Document objects
@@ -256,6 +322,7 @@ def process_and_index_file(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         upload_images=True,
+        batch_size=batch_size,
     )
 
     # Index in vector store

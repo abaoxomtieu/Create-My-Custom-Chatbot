@@ -1,39 +1,35 @@
 import asyncio
 from dotenv import load_dotenv
+from langchain_core.messages import HumanMessage
+
 load_dotenv()
 # from src.agents.primary_chatbot.flow import lesson_plan_design_agent
-from src.agents.prompt_engineer_assistant.flow import prompt_engineer_assistant_agent
-
-# print(lesson_plan_design_agent.get_graph().draw_mermaid())
-
-# user_query: str | AnyMessage
-# messages_history: list
-# document_id_selected: Optional[List]
-# topic: str
-# lesson_name: str
-# subject_name: str
-# class_number: int
-# entry_response: str
-# build_lesson_plan_response: AnyMessage
-
-
+from src.agents.rag_agent_template.flow import rag_agent_template_agent
 
 
 input_dict = {
-    "user_query":"Tạo khung giáo án lớp 5, môn sử, bài Chiến thắng Bạch Đằng năm 938",
-    "messages_history": [],
-    "document_id_selected": None,
-    "lesson_name": None,
-    "subject_name": None,
-    "class_number": None,
-    "entry_response": None,
-    "build_lesson_plan_response": None
+    "messages": [
+        HumanMessage(
+            content="Tạo khung giáo án lớp 5, môn sử, bài Chiến thắng Bạch Đằng năm 938"
+        )
+    ]
 }
 
+config = {"configurable": {"thread_id": "1"}}
+
+
 async def main():
-    response = await prompt_engineer_assistant_agent.ainvoke(input_dict)
-    print(response)
-    print("===============================================")
-    print(response["final_response"])
+    count = 0
+    while True:
+        if count != 0:
+            human_message = input("Nhập input: ")
+        else:
+            human_message = "search db với 'kỳ co quy nhơn'"
+        input_dict = {"messages": [HumanMessage(content=human_message)]}
+        response = await rag_agent_template_agent.ainvoke(input_dict, config)
+        print(response["messages"][-1].content)
+        print("===============================================")
+        count += 1
+
 
 asyncio.run(main())
