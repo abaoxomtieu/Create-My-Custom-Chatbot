@@ -11,10 +11,12 @@ import uuid
 import tempfile
 import time
 import math
+import base64
+import requests
 
 from src.config.cloudinary import upload_image, get_image_url
 from src.data_preprocessing.prompt import image_caption_prompt
-from src.config.llm import llm_2_0 as llm
+from src.config.llm import llm_4o_mini as llm
 from src.config.vector_store import vector_store_lesson_content
 from src.utils.logger import logger
 
@@ -84,10 +86,46 @@ def extract_and_chunk_documents(
                     # Create a temporary file for the image
                     image_id = str(uuid.uuid4())
                     temp_dir = tempfile.mkdtemp()
-                    img_path = os.path.join(temp_dir, f"{image_id}.png")
 
-                    # Save image to temporary file
-                    doc.metadata["image_data"].save(img_path)
+                    # Get the original image
+                    original_img = doc.metadata["image_data"]
+
+                    # Get original dimensions
+                    width, height = original_img.size
+                    llm_img_size = (128, 128)  # Proper size for image processing
+                    if width > llm_img_size[0] or height > llm_img_size[1]:
+                        # Calculate aspect ratio
+                        aspect_ratio = width / height
+
+                        # Determine new dimensions while preserving aspect ratio
+                        if width > height:
+                            new_width = min(width, llm_img_size[0])
+                            new_height = int(new_width / aspect_ratio)
+                        else:
+                            new_height = min(height, llm_img_size[1])
+                            new_width = int(new_height * aspect_ratio)
+
+                        # Resize the image
+                        resized_img = original_img.resize(
+                            (new_width, new_height), Image.LANCZOS
+                        )
+                        logger.info(
+                            f"Resized image from {width}x{height} to {new_width}x{new_height}"
+                        )
+                    else:
+                        # Keep original size for smaller images
+                        resized_img = original_img
+                        logger.info(f"Kept original image size: {width}x{height}")
+
+                    # Save resized image to temporary file
+                    img_path = os.path.join(temp_dir, f"{image_id}.png")
+                    resized_img.save(img_path, format="PNG")
+
+                    # Convert to base64 for LLM processing
+                    buffered = io.BytesIO()
+                    resized_img.save(buffered, format="PNG")
+                    img_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                    base64_url = f"data:image/png;base64,{img_base64}"
 
                     # Upload to Cloudinary
                     upload_result = upload_image(
@@ -103,6 +141,7 @@ def extract_and_chunk_documents(
                     batch_image_data.append(
                         {
                             "public_url": public_url,
+                            "base64_url": base64_url,
                             "temp_dir": temp_dir,
                             "img_path": img_path,
                         }
@@ -119,12 +158,11 @@ def extract_and_chunk_documents(
                                 "content": [
                                     {
                                         "type": "text",
-                                        "text": "Hình này có chứa những gì vậy",
+                                        "text": "Mô tả hình ảnh này để trích xuất captioning",
                                     },
                                     {
-                                        "type": "image",
-                                        "source_type": "url",
-                                        "url": img_data["public_url"],
+                                        "type": "image_url",
+                                        "image_url": {"url": img_data["base64_url"]},
                                     },
                                 ],
                             },
@@ -139,6 +177,8 @@ def extract_and_chunk_documents(
 
                 # Create document chunks with captions
                 for i, caption in enumerate(batch_captions):
+                    # Store only the URL in the vector store metadata to avoid size limits
+                    # The base64 data is too large for Pinecone's 40KB metadata limit
                     processed_image_chunks.append(
                         Document(
                             page_content=caption,
@@ -152,14 +192,6 @@ def extract_and_chunk_documents(
                     # Clean up temporary files
                     os.remove(batch_image_data[i]["img_path"])
                     os.rmdir(batch_image_data[i]["temp_dir"])
-
-                # Sleep between batches to avoid rate limits if there are more batches
-                if batch_idx < num_batches - 1:
-                    sleep_time = 120  # 2 minutes between batches
-                    logger.info(
-                        f"Sleeping for {sleep_time} seconds before processing batch {batch_idx+2}/{num_batches}"
-                    )
-                    time.sleep(sleep_time)
 
             except Exception as e:
                 logger.error(f"Error processing batch {batch_idx+1}: {str(e)}")
@@ -302,7 +334,8 @@ def process_and_index_file(
     file_path: str,
     chunk_size: int = 1000,
     chunk_overlap: int = 200,
-    batch_size: int = 15,
+    batch_size: int = 30,
+    bot_id: str = None,
 ) -> list[Document]:
     """
     Process a file and index it in the vector store.
@@ -324,6 +357,11 @@ def process_and_index_file(
         upload_images=True,
         batch_size=batch_size,
     )
+
+    # Add bot_id to document metadata if provided
+    if bot_id:
+        for doc in documents:
+            doc.metadata["bot_id"] = bot_id
 
     # Index in vector store
     # vector_store_lesson_content.add_documents(documents)
@@ -372,7 +410,6 @@ def process_and_index_directory(
                 print(f"Error processing {file_path}: {e}")
 
     return all_docs
-
 
 if __name__ == "__main__":
     # Example usage

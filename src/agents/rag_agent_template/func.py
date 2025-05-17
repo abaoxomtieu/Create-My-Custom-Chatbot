@@ -76,6 +76,7 @@ def execute_tool(state: State):
 def generate_answer_rag(state: State):
     messages = state["messages"]
     tools = state["tools"]
+    logger.info(f"tools: {tools}")
     if tools:
         response = rag_answering_chain_tool.invoke(
             {

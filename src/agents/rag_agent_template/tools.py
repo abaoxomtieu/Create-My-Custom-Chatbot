@@ -7,10 +7,10 @@ from langchain_core.runnables import RunnableConfig
 
 @tool
 def retrieve_document(query: str, config: RunnableConfig):
-    """Call vector store to retrieve documents based on query
+    """Truy xuất vector store để lấy các document liên quan đến chủ đề của chatbot dựa trên query
 
     Args:
-        query (str): Query
+        query (str): Câu truy vấn của người dùng bằng tiếng Việt
     Returns:
         str: Retrieved documents
     """

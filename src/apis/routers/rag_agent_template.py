@@ -56,7 +56,6 @@ async def message_generator(input_graph: dict, config: dict):
         event_type, event_message = event
         if event_type == "messages":
             message, metadata = event_message
-            print("message", message)
             if isinstance(message, AIMessageChunk) and metadata["langgraph_node"] in [
                 "generate_answer_rag"
             ]:
@@ -135,6 +134,7 @@ async def rag_agent_template_stream(body: RagAgentBody):
         tools = []
         input_graph = {"messages": body.query}
         if not body.prompt and body.bot_id:
+            
             data = await bot_crud.find_by_id(body.bot_id)
             if not data:
                 return JSONResponse(

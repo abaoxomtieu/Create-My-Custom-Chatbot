@@ -28,7 +28,7 @@ if __name__ == "__main__":
                     "content": [
                         {
                             "type": "text",
-                            "text": "Hình này có chứa những gì vậy",
+                            "text": "Mô tả hình ảnh này để trích xuất captioning",
                         },
                         {
                             "type": "image",

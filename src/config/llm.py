@@ -13,7 +13,7 @@ llm_2_5_pro = ChatGoogleGenerativeAI(
 )
 
 
-# llm_4o_mini = ChatOpenAI(
-#     model="gpt-4o-mini",
-# )
+llm_4o_mini = ChatOpenAI(
+    model="gpt-4o-mini",
+)
 embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
