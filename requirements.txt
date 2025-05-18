@@ -17,5 +17,6 @@ pillow
 langchain-text-splitters
 python-docx
 cloudinary
-moto
+motor
 fitz
+PyMuPDF
