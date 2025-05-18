@@ -20,6 +20,7 @@ class RagAgentBody(BaseModel):
     query: dict = Field(..., title="User's query message in role-based format")
     bot_id: Optional[str] = Field(None, title="Bot ID")
     prompt: Optional[str] = Field(None, title="Prompt")
+    conversation_id: Optional[str] = Field(None, title="Conversation ID")
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -36,6 +37,7 @@ class RagAgentBody(BaseModel):
                 },
                 "bot_id": "1",
                 "prompt": "You are a helpful assistant.",
+                "conversation_id": "1",
             }
         }
     }
@@ -134,7 +136,7 @@ async def rag_agent_template_stream(body: RagAgentBody):
         tools = []
         input_graph = {"messages": body.query}
         if not body.prompt and body.bot_id:
-            
+
             data = await bot_crud.find_by_id(body.bot_id)
             if not data:
                 return JSONResponse(
@@ -151,7 +153,7 @@ async def rag_agent_template_stream(body: RagAgentBody):
         input_graph = {"messages": body.query, "prompt": body.prompt, "tools": tools}
         config = {
             "configurable": {
-                "thread_id": body.bot_id if body.bot_id else "",
+                "thread_id": body.conversation_id if body.conversation_id else "1",
                 "bot_id": body.bot_id if body.bot_id else "",
             }
         }
@@ -193,7 +195,7 @@ async def rag_agent_template(body: RagAgentBody):
 
     config = {
         "configurable": {
-            "thread_id": body.bot_id if body.bot_id else "1",
+            "thread_id": body.conversation_id if body.conversation_id else "1",
             "bot_id": body.bot_id if body.bot_id else "not found",
         }
     }
