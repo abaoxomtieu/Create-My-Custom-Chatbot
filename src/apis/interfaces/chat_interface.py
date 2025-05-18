@@ -70,3 +70,7 @@ class HighlightExplainBody(BaseModel):
             }
         }
     }
+
+class CustomChatbotBody(BaseModel):
+    conversation_id: str = Field(...,title='id of conversation')
+    query: str = Field(...,title='message')

@@ -7,10 +7,11 @@ from src.agents.react_agent.prompt import ReAgent_prompt
 from langgraph.prebuilt import create_react_agent
 from typing import TypedDict, List
 
-def enough_information(info:str):
+def enough_information(name,info):
     """
     gọi tool này sau khi hoàn tất quá trình thu thập thông tin cần thiết
     Args:
+        name (str): Tên chatbot cần tạo
         info (str): Thông tin đã thu thập được
     """
     print(info)

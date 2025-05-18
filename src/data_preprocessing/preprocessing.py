@@ -16,7 +16,7 @@ import requests
 
 from src.config.cloudinary import upload_image, get_image_url
 from src.data_preprocessing.prompt import image_caption_prompt
-from src.config.llm import llm_4o_mini as llm
+from src.config.llm import llm_2_0 as llm
 from src.config.vector_store import vector_store_lesson_content
 from src.utils.logger import logger
 
