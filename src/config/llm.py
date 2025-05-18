@@ -11,9 +11,3 @@ llm_1_5_pro = ChatGoogleGenerativeAI(
 llm_2_5_pro = ChatGoogleGenerativeAI(
     model="gemini-2.5-pro-exp-03-25", temperature=0.1, max_retries=2
 )
-
-
-llm_4o_mini = ChatOpenAI(
-    model="gpt-4o-mini",
-)
-embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")

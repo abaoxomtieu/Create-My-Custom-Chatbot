@@ -15,7 +15,7 @@ prompt_analyzed = ChatPromptTemplate.from_messages(
     2.4 Phân tích nhược điểm
     2.5 Nêu ra cách khắc phục
     2.6 Đề xuất những thứ cần bổ sung
-
+    2.7 Viết lại prompt
         """,
         ),
         ("human",
