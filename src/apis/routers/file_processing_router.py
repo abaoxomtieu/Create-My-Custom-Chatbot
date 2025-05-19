@@ -130,11 +130,11 @@ async def ingress_file(
 
         # Process the file
         documents = process_and_index_file(
-            file_path=temp_file_path, 
-            chunk_size=chunk_size, 
+            file_path=temp_file_path,
+            chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             batch_size=30,
-            bot_id=body.bot_id
+            bot_id=body.bot_id,
         )
 
         # bot_id is already added to document metadata in process_and_index_file

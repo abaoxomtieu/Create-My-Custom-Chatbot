@@ -81,7 +81,7 @@ def generate_answer_rag(state: State):
         response = rag_answering_chain_tool.invoke(
             {
                 "messages": messages,
-                "prompt": state["prompt"],
+                "prompt": state["prompt"] + "Sử dụng tool `retrieve_document` để truy xuất tài liệu để bổ sung thông tin cho câu trả lời",
             }
         )
     else:
