@@ -1,22 +1,17 @@
-from fastapi import APIRouter, status, BackgroundTasks
+from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse, StreamingResponse
 from langchain_core.runnables import RunnableConfig
-
-from src.utils.logger import logger
 import json
+from langchain_core.messages.ai import AIMessageChunk
+from src.utils.logger import logger
+from src.agents.custom_chatbot.flow import custom_chatbot
 from src.apis.interfaces.chat_interface import (
     CustomChatbotBody,
 )
-from src.agents.primary_chatbot.flow import lesson_plan_design_agent
-from src.agents.custom_chatbot.flow import custom_chatbot
-from langchain_core.messages.ai import AIMessageChunk
 
 router = APIRouter(prefix="/ai", tags=["AI"])
 
-
-async def message_generator(
-    input_graph: dict, background: BackgroundTasks, config: RunnableConfig
-):
+async def message_generator(input_graph: dict, config: RunnableConfig):
     try:
         last_output_state = None
         temp = ""
@@ -94,7 +89,7 @@ async def message_generator(
 
 
 @router.post("/custom_chatbot/stream")
-async def primary_chat_stream(body: CustomChatbotBody, background: BackgroundTasks):
+def primary_chat_stream(body: CustomChatbotBody):
     try:
         return StreamingResponse(
             message_generator(
@@ -102,7 +97,6 @@ async def primary_chat_stream(body: CustomChatbotBody, background: BackgroundTas
                     "messages": [("user", body.query)],
                 },
                 config={"configurable": {"thread_id": body.conversation_id}},
-                background=background,
             ),
             media_type="text/event-stream",
         )

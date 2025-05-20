@@ -4,15 +4,16 @@ import cloudinary.uploader
 import cloudinary.api
 from cloudinary.utils import cloudinary_url
 from typing import Dict, Any, Optional, Union, List, Tuple
+import os
 
 
 # Configuration
 def configure_cloudinary() -> None:
     """Configure Cloudinary with credentials from environment variables or directly."""
     cloudinary.config(
-        cloud_name="deb6egoxo",
-        api_key="928358182522969",
-        api_secret="KiVOnmFhwvsJEOcaH931oVXWJvo",
+        cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+        api_key=os.getenv("CLOUDINARY_API_KEY"),
+        api_secret=os.getenv("CLOUDINARY_API_SECRET"),
         secure=True,
     )
 

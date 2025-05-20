@@ -1,7 +1,6 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
-
 from PIL import Image
 import io
 import fitz  # PyMuPDF
@@ -9,15 +8,11 @@ from docx import Document as DocxDoc
 import os
 import uuid
 import tempfile
-import time
 import math
 import base64
-import requests
-
-from src.config.cloudinary import upload_image, get_image_url
+from src.config.cloudinary import upload_image
 from src.data_preprocessing.prompt import image_caption_prompt
 from src.config.llm import llm_2_0 as llm
-from src.config.vector_store import vector_store_lesson_content
 from src.utils.logger import logger
 
 

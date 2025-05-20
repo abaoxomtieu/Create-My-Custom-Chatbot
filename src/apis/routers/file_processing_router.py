@@ -6,10 +6,7 @@ from src.apis.interfaces.file_processing_interface import (
     FileAnalysisResponse,
     FileIngressResponse,
 )
-from src.data_preprocessing.preprocessing import (
-    extract_and_chunk_documents,
-    process_and_index_file,
-)
+from src.data_preprocessing.preprocessing import process_and_index_file
 import os
 import tempfile
 import shutil
@@ -32,59 +29,38 @@ async def analyze_file(
     file: UploadFile = File(...),
     body: FileProcessingBody = Depends(get_file_processing_body),
 ):
-    """
-    Analyze a file and return information about its content (word count and image count).
-    """
+
     try:
         logger.info(f"Analyzing file: {file.filename} for bot: {body.bot_id}")
-
-        # Create a temporary file
         temp_dir = tempfile.mkdtemp()
         temp_file_path = os.path.join(temp_dir, file.filename)
-
-        # Save the uploaded file
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-
-        # Get file extension
         file_extension = os.path.splitext(file.filename)[1].lower()
         file_type = file_extension.replace(".", "").upper()
-
         word_count = 0
         image_count = 0
-
-        # Process based on file type
         if file_extension == ".pdf":
-            # Count words and images in PDF
             doc = fitz.open(temp_file_path)
-
             for page in doc:
                 text = page.get_text("text")
                 word_count += len(text.split())
                 image_count += len(page.get_images(full=True))
-
         elif file_extension == ".docx":
-            # Count words and images in DOCX
             doc = DocxDoc(temp_file_path)
-
-            # Count words
             for para in doc.paragraphs:
                 word_count += len(para.text.split())
-
-            # Count images
             image_count = 0
             for rel in doc.part._rels.values():
                 if "image" in rel.target_ref:
                     image_count += 1
         else:
-            # Clean up temporary file
             shutil.rmtree(temp_dir)
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"error": f"Unsupported file type: {file_extension}"},
             )
 
-        # Clean up temporary file
         shutil.rmtree(temp_dir)
 
         return FileAnalysisResponse(
@@ -108,27 +84,18 @@ async def ingress_file(
     file: UploadFile = File(...),
     body: FileProcessingBody = Depends(get_file_processing_body),
 ):
-    """
-    Process and index a file with fixed chunk size (1000) and overlap (200).
-    """
     try:
         logger.info(
             f"Processing and indexing file: {file.filename} for bot: {body.bot_id}"
         )
 
-        # Create a temporary file
         temp_dir = tempfile.mkdtemp()
         temp_file_path = os.path.join(temp_dir, file.filename)
 
-        # Save the uploaded file
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-
-        # Fixed chunk size and overlap as per requirements
         chunk_size = 1000
         chunk_overlap = 200
-
-        # Process the file
         documents = process_and_index_file(
             file_path=temp_file_path,
             chunk_size=chunk_size,
@@ -137,21 +104,11 @@ async def ingress_file(
             bot_id=body.bot_id,
         )
 
-        # bot_id is already added to document metadata in process_and_index_file
-
-        # Add documents to vector store
         test_rag_vector_store.add_documents(documents)
-
-        # Add retrieve_document tool to the chatbot if it doesn't exist
         try:
-            # Get the current chatbot
             chatbot = await bot_crud.find_by_id(body.bot_id)
-
             if chatbot:
-                # Check if tools field exists and if retrieve_document is already in tools
                 tools = chatbot.get("tools", [])
-
-                # Check if retrieve_document tool already exists
                 retrieve_document_exists = False
                 for tool in tools:
                     if (
@@ -160,12 +117,8 @@ async def ingress_file(
                     ):
                         retrieve_document_exists = True
                         break
-
-                # If retrieve_document tool doesn't exist, add it
                 if not retrieve_document_exists:
                     tools.append("retrieve_document")
-
-                    # Update the chatbot with the new tools
                     await bot_crud.update(
                         {"_id": ObjectId(body.bot_id)}, {"tools": tools}
                     )
@@ -174,12 +127,7 @@ async def ingress_file(
                     )
         except Exception as e:
             logger.error(f"Error updating chatbot tools: {str(e)}")
-            # Continue with the process even if updating tools fails
-
-        # Clean up temporary file
         shutil.rmtree(temp_dir)
-
-        # Return response with chunk count
         chunks_count = len(documents)
 
         return FileIngressResponse(

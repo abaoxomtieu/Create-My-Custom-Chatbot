@@ -18,5 +18,5 @@ langchain-text-splitters
 python-docx
 cloudinary
 motor
-fitz
 PyMuPDF
+loguru

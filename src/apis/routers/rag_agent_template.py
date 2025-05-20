@@ -1,46 +1,18 @@
-from fastapi import APIRouter, status, BackgroundTasks, Query
+from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field
-from src.utils.logger import logger
+from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import json
 import datetime
-from src.apis.interfaces.chat_interface import (
-    PrimaryChatBody,
-)
-from src.agents.rag_agent_template.flow import rag_agent_template_agent
-from langchain_core.messages.ai import AIMessageChunk
-from src.config.mongo import bot_crud
 from bson import ObjectId
+from langchain_core.messages.ai import AIMessageChunk
+from src.apis.interfaces.chat_interface import RagAgentBody
+from src.agents.rag_agent_template.flow import rag_agent_template_agent
+from src.config.mongo import bot_crud
+from src.utils.logger import logger
+
 
 router = APIRouter(prefix="/ai", tags=["AI"])
-
-
-class RagAgentBody(BaseModel):
-    query: dict = Field(..., title="User's query message in role-based format")
-    bot_id: Optional[str] = Field(None, title="Bot ID")
-    prompt: Optional[str] = Field(None, title="Prompt")
-    conversation_id: Optional[str] = Field(None, title="Conversation ID")
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "query": {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Hình này là ở đâu vậy?"},
-                        {
-                            "type": "image",
-                            "source_type": "url",
-                            "url": "https://example.com/image.jpg",
-                        },
-                    ],
-                },
-                "bot_id": "1",
-                "prompt": "You are a helpful assistant.",
-                "conversation_id": "1",
-            }
-        }
-    }
 
 
 async def message_generator(input_graph: dict, config: dict):
@@ -71,16 +43,6 @@ async def message_generator(input_graph: dict, config: dict):
                 ) + "\n\n"
         if event_type == "values":
             last_output_state = event_message
-        # except Exception as e:
-        #     logger.error(f"Error processing stream event: {str(e)}")
-        #     yield json.dumps(
-        #         {
-        #             "type": "error",
-        #             "content": "Error processing response " + str(e),
-        #         },
-        #         ensure_ascii=False,
-        #     ) + "\n\n"
-        #     return
 
     if last_output_state is None:
         raise ValueError("No output state received from workflow")
@@ -101,33 +63,6 @@ async def message_generator(input_graph: dict, config: dict):
         ensure_ascii=False,
     )
     yield final_response + "\n\n"
-    # except Exception as e:
-    #     logger.error(f"Error processing final response: {str(e)}")
-    #     yield json.dumps(
-    #         {
-    #             "type": "error",
-    #             "content": "Error processing the final response: " + str(e),
-    #         },
-    #         ensure_ascii=False,
-    #     ) + "\n\n"
-    #     return
-
-    # except Exception as e:
-    #     logger.error(f"Error in workflow stream: {str(e)}")
-    #     yield json.dumps(
-    #         {"type": "error", "content": "Error processing stream: " + str(e)},
-    #         ensure_ascii=False,
-    #     ) + "\n\n"
-    #     return
-
-
-# except Exception as e:
-#     logger.error(f"Unexpected error: {str(e)}")
-#     yield json.dumps(
-#         {"type": "error", "content": "An unexpected error occurred: " + str(e)},
-#         ensure_ascii=False,
-#     ) + "\n\n"
-#     return
 
 
 @router.post("/rag_agent_template/stream")
@@ -240,22 +175,13 @@ class ChatbotUpdateRequest(BaseModel):
 
 @router.get("/chatbots", response_model=ChatbotListResponse)
 async def list_chatbots():
-    """
-    List all available chatbots.
-
-    Returns:
-        A list of chatbot objects with their details.
-    """
     try:
-        # Fetch all chatbots from database using read method
-        chatbots = await bot_crud.read({})
 
-        # Transform the data to include id instead of _id for consistency
+        chatbots = await bot_crud.read({})
         for bot in chatbots:
             if "_id" in bot:
                 bot["id"] = str(bot.pop("_id"))
 
-            # Convert datetime objects to ISO format strings
             if "created_at" in bot and isinstance(bot["created_at"], datetime.datetime):
                 bot["created_at"] = bot["created_at"].isoformat()
 
@@ -278,15 +204,6 @@ async def list_chatbots():
 
 @router.get("/chatbots/{chatbot_id}", response_model=ChatbotDetailResponse)
 async def get_chatbot_detail(chatbot_id: str):
-    """
-    Get detailed information about a specific chatbot.
-
-    Args:
-        chatbot_id: The ID of the chatbot to retrieve.
-
-    Returns:
-        Detailed information about the requested chatbot.
-    """
     try:
         chatbot = await bot_crud.find_by_id(chatbot_id)
 
@@ -299,7 +216,6 @@ async def get_chatbot_detail(chatbot_id: str):
         if "_id" in chatbot:
             chatbot["id"] = str(chatbot.pop("_id"))
 
-        # Convert datetime objects to ISO format strings
         if "created_at" in chatbot and isinstance(
             chatbot["created_at"], datetime.datetime
         ):
@@ -328,18 +244,7 @@ async def get_chatbot_detail(chatbot_id: str):
 
 @router.put("/chatbots/{chatbot_id}", response_model=ChatbotDetailResponse)
 async def update_chatbot(chatbot_id: str, update_data: ChatbotUpdateRequest):
-    """
-    Update a chatbot's properties.
-
-    Args:
-        chatbot_id: The ID of the chatbot to update.
-        update_data: The data to update the chatbot with.
-
-    Returns:
-        The updated chatbot details.
-    """
     try:
-        # First check if the chatbot exists
         existing_chatbot = await bot_crud.find_by_id(chatbot_id)
 
         if not existing_chatbot:
@@ -348,7 +253,6 @@ async def update_chatbot(chatbot_id: str, update_data: ChatbotUpdateRequest):
                 content={"error": f"Chatbot with ID {chatbot_id} not found"},
             )
 
-        # Prepare update data (only include non-None fields)
         update_fields = {}
         if update_data.name is not None:
             update_fields["name"] = update_data.name
@@ -357,10 +261,8 @@ async def update_chatbot(chatbot_id: str, update_data: ChatbotUpdateRequest):
         if update_data.tools is not None:
             update_fields["tools"] = update_data.tools
 
-        # Add updated_at timestamp
         update_fields["updated_at"] = datetime.datetime.now()
 
-        # Update the chatbot
         updated = await bot_crud.update({"_id": ObjectId(chatbot_id)}, update_fields)
 
         if not updated:
@@ -369,29 +271,21 @@ async def update_chatbot(chatbot_id: str, update_data: ChatbotUpdateRequest):
                 content={"error": "Failed to update chatbot"},
             )
 
-        # Get the updated chatbot
         updated_chatbot = await bot_crud.find_by_id(chatbot_id)
-
-        # Transform _id to id for consistency
         if "_id" in updated_chatbot:
             updated_chatbot["id"] = str(updated_chatbot.pop("_id"))
-
-        # Convert datetime objects to ISO format strings
         if "created_at" in updated_chatbot and isinstance(
             updated_chatbot["created_at"], datetime.datetime
         ):
             updated_chatbot["created_at"] = updated_chatbot["created_at"].isoformat()
-
         if "updated_at" in updated_chatbot and isinstance(
             updated_chatbot["updated_at"], datetime.datetime
         ):
             updated_chatbot["updated_at"] = updated_chatbot["updated_at"].isoformat()
-
         if "expire_at" in updated_chatbot and isinstance(
             updated_chatbot["expire_at"], datetime.datetime
         ):
             updated_chatbot["expire_at"] = updated_chatbot["expire_at"].isoformat()
-
         logger.info(f"Updated chatbot with ID: {chatbot_id}")
         return updated_chatbot
 

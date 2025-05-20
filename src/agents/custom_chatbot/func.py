@@ -1,10 +1,11 @@
-from typing import TypedDict
-from typing import TypedDict, Optional, List
-from langchain_core.messages import AnyMessage, ToolMessage, AIMessage
+from typing import TypedDict,Optional
+from langchain_core.messages import AnyMessage, ToolMessage
 from langgraph.graph.message import add_messages
 from typing import Sequence, Annotated
-from src.agents.custom_chatbot.prompt import create_system_prompt
-from src.config.llm import llm_2_0
+from src.agents.custom_chatbot.prompt import (
+    create_system_chain,
+    collection_info_agent,
+)
 from src.utils.logger import logger
 import re
 from src.config.mongo import bot_crud
@@ -26,25 +27,18 @@ def get_info_collection(messages):
     return name, info
 
 
-def create_prompt(state: State):
+async def create_prompt(state: State):
     messages = state.get("messages")
     name, info = get_info_collection(messages)
     logger.info(f"create_prompt {info}")
-    res = llm_2_0.invoke(
-        [
-            {"role": "system", "content": create_system_prompt},
-            {"role": "human", "content": info},
-        ]
-    )
-    prompt = f"name chatbot:{name}"
-    prompt = res.content
-    return {"prompt": prompt, "name": name}
+    res = await create_system_chain.ainvoke({"info": info})
+    return {"prompt": res.content, "name": name}
 
 
 async def save_prompt(state: State):
-    prompt = state.get("prompt", "")
+    prompt = state["prompt"]
     matches = re.findall(r"```(.*?)```", prompt, re.DOTALL)
     if matches:
         prompt = matches[0]
-    name = state.get("name")
+    name = state["name"]
     await bot_crud.create({"name": name, "prompt": prompt, "tools": []})

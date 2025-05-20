@@ -1,11 +1,9 @@
 from langgraph.graph import StateGraph, START, END
-from src.config.llm import llm_2_0
-from .func import State
 from langgraph.graph.state import CompiledStateGraph
-from src.agents.react_agent.flow import react_agent
-from langchain_core.messages import ToolMessage,AIMessage
+from langchain_core.messages import ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
-from src.agents.custom_chatbot.func import create_prompt,save_prompt
+from .func import collection_info_agent, create_prompt, save_prompt, State
+
 checkpointer = InMemorySaver()
 
 
@@ -15,26 +13,26 @@ class CustomChatBot:
 
     @staticmethod
     def is_enough_information(state: State):
-        messages = state.get("messages", "")
-        for idx,message in enumerate(messages):
+        messages = state["messages"]
+        for message in messages:
             if isinstance(message, ToolMessage):
                 return "create_prompt"
         return "END"
 
     def node(self):
-        self.builder.add_node("react_agent", react_agent)
+        self.builder.add_node("collection_info_agent", collection_info_agent)
         self.builder.add_node("create_prompt", create_prompt)
         self.builder.add_node("save_prompt", save_prompt)
 
     def edge(self):
-        self.builder.add_edge(START, "react_agent")
+        self.builder.add_edge(START, "collection_info_agent")
         self.builder.add_conditional_edges(
-            "react_agent",
+            "collection_info_agent",
             self.is_enough_information,
             {"create_prompt": "create_prompt", "END": END},
         )
-        self.builder.add_edge("create_prompt","save_prompt")
-        self.builder.add_edge("save_prompt",END)
+        self.builder.add_edge("create_prompt", "save_prompt")
+        self.builder.add_edge("save_prompt", END)
 
     def __call__(self) -> CompiledStateGraph:
         self.node()
