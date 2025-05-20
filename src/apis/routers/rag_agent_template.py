@@ -69,28 +69,30 @@ async def message_generator(input_graph: dict, config: dict):
 async def rag_agent_template_stream(body: RagAgentBody):
     try:
         tools = []
-        input_graph = {"messages": body.query}
-        if not body.prompt and body.bot_id:
-
-            data = await bot_crud.find_by_id(body.bot_id)
-            if not data:
-                return JSONResponse(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    content={"error": "Bot not found"},
-                )
-            body.prompt = data["prompt"]
-            tools = data["tools"]
-        if not body.prompt:
+        if not body.bot_id:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content={"error": "Prompt is required"},
+                content={"error": "Bot ID is required"},
             )
-        input_graph = {"messages": body.query, "prompt": body.prompt, "tools": tools}
+        data = await bot_crud.find_by_id(body.bot_id)
+        if not data or not data["prompt"]:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"error": "Bot not found"},
+            )
+        prompt = data["prompt"]
+        tools = data["tools"]
         config = {
             "configurable": {
                 "thread_id": body.conversation_id if body.conversation_id else "1",
                 "bot_id": body.bot_id if body.bot_id else "",
             }
+        }
+        input_graph = {
+            "messages": body.query,
+            "prompt": prompt,
+            "tools": tools,
+            "model_name": body.model_name,
         }
 
         return StreamingResponse(

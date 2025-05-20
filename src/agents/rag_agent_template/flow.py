@@ -1,5 +1,4 @@
 from langgraph.graph import StateGraph, START, END
-from src.config.llm import llm_2_0
 from .func import (
     State,
     trim_history,

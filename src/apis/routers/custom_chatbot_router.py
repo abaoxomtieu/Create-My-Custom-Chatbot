@@ -95,6 +95,7 @@ def primary_chat_stream(body: CustomChatbotBody):
             message_generator(
                 input_graph={
                     "messages": [("user", body.query)],
+                    "model_name": body.model_name
                 },
                 config={"configurable": {"thread_id": body.conversation_id}},
             ),

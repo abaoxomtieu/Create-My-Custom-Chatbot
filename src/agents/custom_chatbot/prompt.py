@@ -1,5 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate
-from src.config.llm import llm_2_0 as llm, llm_4o
+from src.config.llm import get_llm
 from langgraph.prebuilt import create_react_agent
 from .tools import enough_information
 
@@ -73,9 +73,12 @@ Lưu ý:
 - Họ có thể tạo chatbot nếu thu thập được một số thông tin cần thiết. (Không cần hỏi chi tiết nếu họ không có nhu cầu)
 """
 
-create_system_chain = create_system_prompt | llm_4o
-collection_info_agent = create_react_agent(
-    model=llm_4o,
-    tools=[enough_information],
-    prompt=collection_info_agent_prompt,
-)
+def get_custom_chatbot_chains(model_name: str):
+    llm = get_llm(model_name)
+    create_system_chain = create_system_prompt | llm
+    collection_info_agent = create_react_agent(
+        model=llm,
+        tools=[enough_information],
+        prompt=collection_info_agent_prompt,
+    )
+    return create_system_chain, collection_info_agent

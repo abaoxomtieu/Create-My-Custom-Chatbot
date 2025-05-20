@@ -1,7 +1,7 @@
 from typing import TypedDict, Optional, List
 from langchain_core.messages import AnyMessage, ToolMessage
 from langgraph.graph.message import add_messages
-from .prompt import rag_answering_chain_tool, rag_answering_chain
+from .prompt import get_rag_chains
 from typing import Sequence, Annotated
 from langchain_core.messages import RemoveMessage
 from langchain_core.documents import Document
@@ -18,6 +18,7 @@ class State(TypedDict):
     selected_documents: Optional[List[Document]]
     tools: list
     prompt: str
+    model_name: Optional[str]
 
 
 def trim_history(state: State):
@@ -76,6 +77,8 @@ def execute_tool(state: State):
 def generate_answer_rag(state: State):
     messages = state["messages"]
     tools = state["tools"]
+    model_name = state.get("model_name", "gemini-2.0-flash")  # default to gemini-2.0-flash
+    rag_answering_chain_tool, rag_answering_chain = get_rag_chains(model_name)
     logger.info(f"tools: {tools}")
     if tools:
         response = rag_answering_chain_tool.invoke(
