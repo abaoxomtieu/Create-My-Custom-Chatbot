@@ -6,7 +6,6 @@ from typing import Sequence, Annotated
 from langchain_core.messages import RemoveMessage
 from langchain_core.documents import Document
 from .tools import retrieve_document
-from src.utils.helper import convert_list_context_source_to_str
 from src.utils.logger import logger
 
 tools = [retrieve_document]

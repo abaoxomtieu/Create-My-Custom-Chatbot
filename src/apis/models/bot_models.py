@@ -1,5 +1,4 @@
 from pydantic import Field
-from typing import Literal
 from .BaseDocument import BaseDocument
 from bson import ObjectId
 

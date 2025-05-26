@@ -8,11 +8,6 @@ from .func import (
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import InMemorySaver
 
-from langgraph.prebuilt import ToolNode
-from .tools import retrieve_document
-
-tool_node = ToolNode([retrieve_document])
-
 
 class RAGAgentTemplate:
     def __init__(self):
