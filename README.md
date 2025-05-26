@@ -1,71 +1,166 @@
-# Custom-AI
+# AI Service Roboki Backend
 
-Advanced AI Services including Adaptive Chatbot capabilities.
+## Overview
+AI Service Roboki is a powerful backend service that enables the creation and management of custom AI chatbots. The service provides two main functionalities:
 
-## Features
+1. **Custom Chatbot Creation**
+   - Interactive prompt generation for new chatbots
+   - Intelligent information collection from users
+   - Automatic prompt refinement and optimization
+   - MongoDB storage for chatbot configurations
 
-### Adaptive Chatbot
+2. **Template-based Chatbot Processing**
+   - RAG (Retrieval-Augmented Generation) based responses
+   - Document processing and indexing
+   - Streaming response support
+   - Multiple model support (GPT-4, Gemini, etc.)
 
-The Adaptive Chatbot dynamically adapts to user interactions by analyzing requests, customizing system prompts, and building user profiles for personalized responses.
+## Architecture
 
-Key capabilities:
-- Dynamic system prompt adjustment based on user needs
-- User profiling to track knowledge level and preferences
-- Probing questions when more information is needed
-- Personalized responses based on interaction history
+### Core Components
 
-See the [Adaptive Chatbot Documentation](src/agents/adaptive_chatbot/README.md) for more details.
+1. **Custom Chatbot Module**
+   - `custom_chatbot/flow.py`: Main workflow for chatbot creation
+   - `custom_chatbot/prompt.py`: Prompt templates and system messages
+   - `custom_chatbot/func.py`: Core functions for prompt generation and storage
 
-## Installation
+2. **RAG Agent Module**
+   - `rag_agent_template/flow.py`: RAG-based response generation
+   - Document processing and vector storage
+   - Streaming response handling
 
-```bash
-# Create and activate a virtual environment (optional but recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+3. **API Endpoints**
+   - `/ai/custom_chatbot/stream`: Create and stream custom chatbot responses
+   - `/ai/rag_agent_template/stream`: Stream RAG-based responses
+   - `/ai/chatbots`: CRUD operations for chatbot management
+   - `/ai/ingress`: Document processing and indexing
 
-# Install dependencies
-pip install -r requirements.txt
+### Database Schema
+
+```json
+{
+  "chatbot": {
+    "id": "string",
+    "name": "string",
+    "prompt": "string",
+    "tools": ["string"],
+    "created_at": "datetime",
+    "updated_at": "datetime"
+  }
+}
 ```
-
-## Running the Application
-
-```bash
-# Run the FastAPI application with hot-reloading
-python app.py
-```
-
-The API will be available at http://localhost:8000
 
 ## API Documentation
 
-Once the server is running, access the Swagger documentation at:
-http://localhost:8000/
+### Custom Chatbot Creation
+
+```http
+POST /ai/custom_chatbot/stream
+Content-Type: application/json
+
+{
+  "conversation_id": "string",
+  "query": "string",
+  "model_name": "string"
+}
+```
+
+### RAG Agent Template
+
+```http
+POST /ai/rag_agent_template/stream
+Content-Type: application/json
+
+{
+  "bot_id": "string",
+  "query": "string",
+  "conversation_id": "string",
+  "model_name": "string"
+}
+```
+
+### Chatbot Management
+
+```http
+GET /ai/chatbots
+GET /ai/chatbots/{chatbot_id}
+PUT /ai/chatbots/{chatbot_id}
+```
+
+## Setup and Installation
+
+1. **Prerequisites**
+   - Python 3.8+
+   - MongoDB
+   - Required Python packages (see requirements.txt)
+
+2. **Installation**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Environment Variables**
+   ```env
+   MONGODB_URI=your_mongodb_uri
+   OPENAI_API_KEY=your_openai_api_key
+   ```
+
+4. **Running the Service**
+   ```bash
+   uvicorn app:app --host 0.0.0.0 --port 7860 --reload
+   ```
+
+## Features
+
+### Custom Chatbot Creation
+- Interactive prompt generation
+- Intelligent information collection
+- Automatic prompt refinement
+- MongoDB storage integration
+
+### RAG-based Processing
+- Document processing and indexing
+- Vector storage for efficient retrieval
+- Streaming response support
+- Multiple model support
+
+### Document Processing
+- File upload and processing
+- Chunking and indexing
+- Vector storage integration
+- Automatic tool addition
 
 ## Development
 
 ### Project Structure
-
 ```
-├── app.py                  # Main application entry point
-├── requirements.txt        # Project dependencies
-├── src/                    # Source code
-│   ├── agents/             # AI agents
-│   │   ├── adaptive_chatbot/  # Adaptive chatbot implementation
-│   │   ├── primary_chatbot/   # Primary chatbot implementation
-│   │   └── ...
-│   ├── apis/               # API endpoints
-│   │   ├── interfaces/     # Request/response models
-│   │   └── routers/        # API routers
-│   ├── config/             # Configuration
-│   └── utils/              # Utility functions
+BE/
+├── src/
+│   ├── agents/
+│   │   ├── custom_chatbot/
+│   │   └── rag_agent_template/
+│   ├── apis/
+│   │   ├── interfaces/
+│   │   └── routers/
+│   ├── config/
+│   └── utils/
+├── test/
+├── app.py
+└── requirements.txt
 ```
 
-### Testing
+### Adding New Features
+1. Create new router in `src/apis/routers/`
+2. Define interfaces in `src/apis/interfaces/`
+3. Implement business logic in `src/agents/`
+4. Add tests in `test/`
 
-```bash
-# Run adaptive chatbot tests
-python src/test_adaptive_chatbot.py
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
 
-# Run primary chatbot tests
-python src/test_primary_chatbot.py
-```
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.

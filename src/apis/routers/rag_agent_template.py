@@ -297,3 +297,36 @@ async def update_chatbot(chatbot_id: str, update_data: ChatbotUpdateRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"error": f"Failed to update chatbot: {str(e)}"},
         )
+
+
+@router.delete("/chatbots/{chatbot_id}")
+async def delete_chatbot(chatbot_id: str):
+    try:
+        existing_chatbot = await bot_crud.find_by_id(chatbot_id)
+
+        if not existing_chatbot:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={"error": f"Chatbot with ID {chatbot_id} not found"},
+            )
+
+        deleted = await bot_crud.delete({"_id": ObjectId(chatbot_id)})
+
+        if not deleted:
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"error": "Failed to delete chatbot"},
+            )
+
+        logger.info(f"Deleted chatbot with ID: {chatbot_id}")
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"message": "Chatbot deleted successfully"},
+        )
+
+    except Exception as e:
+        logger.error(f"Error deleting chatbot: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": f"Failed to delete chatbot: {str(e)}"},
+        )
