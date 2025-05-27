@@ -76,14 +76,15 @@ def execute_tool(state: State):
 def generate_answer_rag(state: State):
     messages = state["messages"]
     tools = state["tools"]
-    model_name = state.get("model_name", "gemini-2.0-flash")  # default to gemini-2.0-flash
+    model_name = state.get("model_name", "gemini-2.0-flash")
     rag_answering_chain_tool, rag_answering_chain = get_rag_chains(model_name)
     logger.info(f"tools: {tools}")
     if tools:
         response = rag_answering_chain_tool.invoke(
             {
                 "messages": messages,
-                "prompt": state["prompt"] + "Sử dụng tool `retrieve_document` để truy xuất tài liệu để bổ sung thông tin cho câu trả lời",
+                "prompt": state["prompt"]
+                + "Sử dụng tool `retrieve_document` để truy xuất tài liệu để bổ sung thông tin cho câu trả lời",
             }
         )
     else:

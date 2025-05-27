@@ -8,7 +8,6 @@ from langchain_core.runnables import RunnableConfig
 @tool
 def retrieve_document(query: str, config: RunnableConfig):
     """Ưu tiên truy xuất tài liệu từ vector store nếu câu hỏi liên quan đến vai trò của chatbot.
-    
 
     Args:
         query (str): Câu truy vấn của người dùng bằng tiếng Việt

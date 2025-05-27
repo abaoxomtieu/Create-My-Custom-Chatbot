@@ -1,4 +1,4 @@
-from typing import TypedDict,Optional
+from typing import TypedDict, Optional
 from langchain_core.messages import AnyMessage, ToolMessage
 from langgraph.graph.message import add_messages
 from typing import Sequence, Annotated
@@ -26,7 +26,7 @@ def get_info_collection(messages):
 
 
 async def collection_info_agent(state: State):
-    model_name = state.get("model_name", "gpt-4o")
+    model_name = state.get("model_name")
     _, collection_info_agent = get_custom_chatbot_chains(model_name)
     return await collection_info_agent.ainvoke(state)
 
@@ -35,7 +35,7 @@ async def create_prompt(state: State):
     messages = state.get("messages")
     name, info = get_info_collection(messages)
     logger.info(f"create_prompt {info}")
-    model_name = state.get("model_name", "gpt-4o")
+    model_name = state.get("model_name")
     create_system_chain, _ = get_custom_chatbot_chains(model_name)
     res = await create_system_chain.ainvoke({"info": info})
     return {"prompt": res.content, "name": name}
