@@ -3,6 +3,13 @@ from src.config.vector_store import test_rag_vector_store
 from src.utils.helper import convert_list_context_source_to_str
 from src.utils.logger import logger
 from langchain_core.runnables import RunnableConfig
+from langchain_experimental.utilities import PythonREPL
+from langchain_community.tools import DuckDuckGoSearchRun
+
+
+duckduckgo_search = DuckDuckGoSearchRun()
+
+python_exec = PythonREPL()
 
 
 @tool
@@ -33,3 +40,16 @@ def retrieve_document(query: str, config: RunnableConfig):
         "selected_documents": selected_documents,
         "selected_ids": selected_ids,
     }
+
+
+@tool
+def python_repl(code: str):
+    """
+    A Python shell. Use this to execute python commands. Input should be a valid python command. If you want to see the output of a value, you should print it out with `print(...)`.
+
+    Args:
+        code (str): Python code to execute
+    Returns:
+        str: Output of the Python code
+    """
+    return python_exec.run(code)
