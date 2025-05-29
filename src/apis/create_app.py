@@ -5,14 +5,12 @@ from src.apis.routers.file_processing_router import router as router_file_proces
 from src.apis.routers.custom_chatbot_router import router as custom_chatbot_processing
 from src.apis.routers.vector_store_router import router as vector_store_router
 from src.apis.routers.tts_router import router as tts_router
-
 api_router = APIRouter()
 api_router.include_router(router_rag_agent_template)
 api_router.include_router(router_file_processing)
 api_router.include_router(custom_chatbot_processing)
 api_router.include_router(vector_store_router)
 api_router.include_router(tts_router)
-
 def create_app():
     app = FastAPI(
         docs_url="/",
@@ -26,7 +24,5 @@ def create_app():
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    app.include_router(api_router)
 
     return app
