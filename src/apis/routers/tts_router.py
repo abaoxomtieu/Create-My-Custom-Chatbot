@@ -38,7 +38,7 @@ except Exception as e:
 # Initialize Google Gemini client
 try:
     logger.info("Initializing Google Gemini client...")
-    gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY_2"))
+    gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
     logger.info("Google Gemini client initialized successfully")
 except Exception as e:
     logger.error(f"Failed to initialize Google Gemini client: {str(e)}")
