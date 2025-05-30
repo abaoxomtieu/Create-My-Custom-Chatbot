@@ -1,7 +1,7 @@
-# AI Service Roboki Backend
+# AI Service Backend
 
 ## Overview
-AI Service Roboki is a powerful backend service that enables the creation and management of custom AI chatbots. The service provides two main functionalities:
+AI Service is a powerful backend service that enables the creation and management of custom AI chatbots. The service provides two main functionalities:
 
 1. **Custom Chatbot Creation**
    - Interactive prompt generation for new chatbots

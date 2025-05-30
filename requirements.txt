@@ -20,3 +20,9 @@ cloudinary
 motor
 PyMuPDF
 loguru
+Wave
+langchain_experimental
+google-genai
+transformers
+torch
+duckduckgo-search

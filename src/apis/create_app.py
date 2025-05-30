@@ -14,7 +14,7 @@ api_router.include_router(tts_router)
 def create_app():
     app = FastAPI(
         docs_url="/",
-        title="AI Service Roboki",
+        title="AI Service ABAOXOMTIEU",
     )
 
     app.add_middleware(
